@@ -11,7 +11,7 @@
 /keySize 100 def
 /valueSize 1024 def
 
-/debug true def
+/debug false def
 
 %% /concatstrings derived from https://stackoverflow.com/questions/12378904/postscript-concatenate-two-strings
 /concatstrings % (a) (b) -> (ab)  
@@ -56,7 +56,9 @@
         err (%  ) msg concatstrings (\n) concatstrings writestring
         err flushfile
         end
-    }if
+    }{
+        pop
+    }ifelse
 }bind def
 
 /Error{
@@ -73,6 +75,9 @@
 }def
 
 /closeFilesAndQuit{
+    (Stack start) Debug
+    stack
+    (Stack end) Debug
     (Closing stdin) Debug
     f flushfile
     f closefile
@@ -411,310 +416,6 @@
     
     end
 }def
-
-% /kv2{
-%     (KV2 start) Debug
-%     {
-%         {
-%             /lineCount lineCount 1 add store
-%             f cmd readline
-%             /ok exch def
-%             ok not{
-%                 exit
-%             }if
-%             /cmd exch def
-%             (Cmd: ) cmd concatstrings Debug        
-
-%             cmd
-%             <<
-%                 % TODO
-%                 % 1 - (f) freezes db
-%                 %   - no adds or deletes allowed
-%                 %   - Dict copied into array
-%                 %   - 'k' command (list keys) now uses array for key ranges; O(1) instead of default implementation
-%                 %      of looping through dictionary keys until range
-%                 % 3 - (C) Commit transation; using save 
-%                 % 3 - (R) Rollback transation; using restore
-%                 % 4 - (P) batch putinterval
-%                 %  P
-%                 %  nitems
-%                 % 0th key
-%                 % 0th value
-%                 % ...
-%                 % n-1 th key
-%                 % n-1 th value
-%                 %
-                
-%                 (p) { % put key value
-%                     % p key
-%                     % value
-%                     % Returns: nothing
-                    
-%                     /key keySize string def
-%                     /value valueSize string def
-
-%                     /lineCount lineCount 1 add store
-%                     line key readline
-%                     /ok exch def
-%                     ok not{
-%                         exit
-%                     }if
-
-%                     /lineLength line length def
-
-%                     lineLength 3 lt{
-%                         (p command needs to be at least 3 characters: one for cmd, one space, >=1 for key) Error
-%                     }if
-                    
-%                     /key exch store
-%                     ( Key: ) key concatstrings Debug        
-
-%                     /lineCount lineCount 1 add store
-%                     f value readline
-%                     /ok exch def
-%                     ok not{
-%                         exit
-%                     }if
-%                     /value exch store
-%                     ( Value: ) value concatstrings Debug        
-%                     kvstore key value put
-%                     ( Put successful) Debug
-%                 }
-
-%                 (D) { % Delete all items from dictionary
-%                     % D
-%                     % Returns nothing
-
-
-%                     kvstore{
-%                         pop
-%                         /key exch def
-%                         kvstore key undef
-%                         debug{
-%                             ( Deleting: ) key keySize string cvs concatstrings Debug
-%                         }if
-
-%                     }forall
-%                     debug{
-%                         (  Dict Count=) kvstore length 16 string cvs concatstrings Debug
-%                     }if
-%                 }
-
-
-%                 (g) { % get value with key
-%                     % g
-%                     % key
-%                     % Returns
-%                     % If not found:
-%                     % f
-%                     % If found:
-%                     % t
-%                     % value
-                    
-%                     /key keySize string def
-
-%                     /lineCount lineCount 1 add store
-%                     f key readline
-%                     /ok exch def
-%                     ok not{
-%                         exit
-%                     }if
-%                     /key exch store
-
-%                     key isValidInput not{
-%                         (Error: key line rewquires first position to be a space; have: [) key 0 1 getinterval concatstrings  (]) concatstrings =
-%                         stop
-%                     }if
-                    
-%                     debug{
-%                         ( Key: [) key concatstrings (]) concatstrings Debug
-%                     }if
-                    
-%                     kvstore key known not{
-%                         out (f\n) writestring
-%                         ( not found ) Debug        
-%                     }{
-%                         out (t\n) writestring
-%                         out kvstore key get writestring
-%                         out (\n) writestring
-%                         debug{
-%                             ( Value: ) kvstore key get concatstrings Debug
-%                         }if
-%                     }ifelse
-%                     out flushfile
-%                 }
-
-%                 (c) { % Num items stored
-%                     % c
-%                     % Returns num found:
-%                     % n
-%                     debug{
-%                         %( Count: ) kvstore count 16 string cvs concatstrings Debug
-%                         ( Dict #items: )  kvstore length 16 string cvs concatstrings Debug
-%                     }if
-%                     out kvstore length 16 string cvs writestring
-%                     out (\n) writestring
-
-%                     out flushfile
-%                 }
-
-%                 (d) {
-%                     /key keySize string def
-
-
-%                     /lineCount lineCount 1 add store
-%                     f key readline
-%                     /ok exch def
-%                     ok not{
-%                         exit
-%                     }if
-%                     /key exch store
-%                     debug{
-%                         %( Count: ) kvstore count 16 string cvs concatstrings Debug
-%                         ( Key: )  key concatstrings Debug
-%                     }if
-
-%                     kvstore key undef
-%                 }
-
-%                 (k) { % List keys:
-%                     % k
-%                     % startN endN
-%                     ( List keys) Debug
-%                     /range 32 string def
-%                     /lineCount lineCount 1 add store
-
-%                     f range readline
-%                     /ok exch def
-%                     ok not{
-%                         exit
-%                     }if
-%                     /range exch store
-                    
-%                     % Extract start and end range
-%                     range token{
-%                         /startKey exch def
-%                         token{
-%                             /endKey exch def
-%                         }{
-%                             (Error reading k endKey) =
-%                             exit
-%                         }ifelse
-%                     }{
-%                         (Error reading k startKey) =
-%                         exit
-%                     }ifelse
-%                     pop % not sure what we are popping here but there is a space on the stack...?
-
-%                     debug{
-%                         ( Start: ) startKey 16 string cvs concatstrings (  End: ) concatstrings endKey 16 string cvs concatstrings Debug
-%                     }if
-                    
-%                     %Validate args
-%                     % integers
-%                     startKey type /integertype ne   endKey type /integertype ne  or{
-%                         (Error: start and end must be integers) =
-%                         exit
-%                     }if
-
-%                     % >= 0
-%                     startKey 0 lt  endKey 0 lt or{
-%                         (Error: start and end must be >= 0) =
-%                         exit
-%                     }if
-
-%                     % startKey < endKey
-%                     startKey endKey lt not{
-%                         (Error: start must be less than  end) =
-%                         exit
-%                     }if
-
-%                     % body
-%                     /dictLength kvstore length def
-
-%                     % startKey greated than # items in dict
-%                     startKey dictLength gt{
-%                         ( #Items: ) Debug
-%                         out (0\n) writestring
-%                     }{
-%                         % How many returned
-%                         % Range entirely inside dictKey length
-%                         endKey dictLength lt{
-%                             debug{
-%                                 ( #Items: ) endKey startKey sub 1 add 16 string cvs concatstrings Debug
-%                             }if
-%                             out endKey startKey sub 1 add 16 string cvs writestring
-%                             out (\n) writestring
-%                         }{
-%                             % Top Range larger than dictKey length (partial return)
-%                             debug{
-%                                 ( #Items: ) dictLength startKey sub  16 string cvs concatstrings Debug
-%                             }if
-%                             out dictLength startKey sub  16 string cvs writestring
-
-%                             out (\n) writestring
-
-%                         }ifelse
-                        
-%                         /keyCounter 0 def
-%                         kvstore{
-%                             keyCounter startKey ge   keyCounter endKey le and{
-
-%                                 debug{
-%                                     (  ) keyCounter 16 string cvs concatstrings Debug
-%                                 }if
-%                                 pop % value                                
-%                                 /k exch def
-
-%                                 out k keySize string cvs writestring
-%                                 out (\n) writestring
-%                             }{
-%                                 pop
-%                                 pop
-%                             }ifelse
-
-%                             /keyCounter keyCounter 1 add store
-
-%                             % Above range?
-%                             keyCounter endKey gt{
-%                                 exit
-%                             }if
-%                         }forall
-%                     }ifelse
-%                     out flushfile
-%                 }
-
-%                 (Q) {
-%                     (Quitting) Debug
-%                     f flushfile
-%                     f closefile
-
-%                     out flushfile
-%                     out closefile
-%                     quit
-%                 } 
-%             >>
-%             {
-%                 (Error: Unknown command) =
-%                 (Error: command: [) cmd concatstrings (]) concatstrings =
-%                 (Error: input line #) lineCount 16 string cvs concatstrings =
-%                 exit
-%             }
-%             switch
-%         }loop
-%     }stopped{
-%         (Error: ) $error /errorname get 64 string cvs concatstrings =
-%         (Error: input line #) lineCount 16 string cvs concatstrings =
-%         %(Error: /) $error /command get concatstrings =
-%         (Error: in command: /) $error /command get  128 string cvs concatstrings =
-%         f flushfile
-%         f closefile
-        
-%         out flushfile
-%         out closefile
-%         quit
-%     }if
-% }bind def
 
 kv
 
