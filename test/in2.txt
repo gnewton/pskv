@@ -1,0 +1,11 @@
+p 10foo
+hello
+g 10foo
+g 44
+k 0 100
+d 10
+d 45
+c
+D
+c
+Q

@@ -1,56 +1,37 @@
-p
- k0
- v0
-p
- k1
- v1
-p
- 100
- 200
-g
- 100
-p
- k2
- v2
-p
- k3
- v3
-g
- 203
-p
- k4
- v4
-p
- k5
- v5
-p
- k6
- v6
-p
- k7
- v7
+p k0
+v0
+p k1
+v1
+p 100
+200
+g 100
+p k2
+v2
+p k3
+v3
+g 203
+p k4
+v4
+p k5
+v5
+p k6
+v6
+p k7
+v7
 c
-p
- k8
- v8
-p
- k9
- v9
-p
- k10
- v10
-d
- k10
-k
-7 12
+p k8
+v8
+p k9
+v9
+p k10
+v10
+d k10
+k 7 12
 D
-p
- 145
- value for 145
-p
- foo
- value for foo
+p 145
+value for 145
+p foo
+value for foo
 c
-k
- 0 100
+k 0 100
 Q

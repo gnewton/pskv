@@ -41,6 +41,13 @@
     4 -1 roll putinterval
 } bind def
 
+/bracket{
+    1 dict begin
+    /s exch def
+    ([) s concatstrings (]) concatstrings
+    end
+}def
+
 /Debug{
     debug{
         1 dict begin
@@ -59,10 +66,11 @@
     err (%  Error: ) msg concatstrings (\n) concatstrings writestring
     err (%  Error: Input line #) lineCount 16 string cvs concatstrings (\n) concatstrings writestring
     err flushfile
+    /kv cvx /typecheck signalerror
     closeFilesAndQuit
     end
-    stack
-}bind def
+
+}def
 
 /closeFilesAndQuit{
     (Closing stdin) Debug
@@ -118,7 +126,7 @@
 
 /lineCount 0 def
 
-/cmd 1 string def
+/cmd keySize 2 add string def
 
 /isValidInput{
     0 1 getinterval  ( ) eq
@@ -130,15 +138,20 @@
     {
         {
             (-------------------) Debug
-            
+            /cmd keySize 2 add string store
+
             /lineCount lineCount 1 add store
+
             f cmd readline
             /ok exch def
             ok not{
                 exit
             }if
 
-            /cmd exch def
+            /line exch def
+
+            /cmd line 0 1 getinterval def
+
             (Cmd: ) cmd concatstrings Debug        
 
             cmd
@@ -162,25 +175,16 @@
                 %
                 
                 (p) { % put key value
-                    % d
-                    % key
+                    % d key
                     % value
-                    % Returns: nothing
+                    % -Returns: nothing
+
+                    % Validate line
+                    line commandKeyValidate
                     
-                    /key keySize string def
+                    /key line 2 line length -2 add getinterval def
+
                     /value valueSize string def
-
-                    /lineCount lineCount 1 add store
-
-                    f key readline
-
-                    /ok exch def
-                    ok not{
-                        exit
-                    }if
-                    /key exch store
-                    (Key: ) key concatstrings Debug        
-
                     /lineCount lineCount 1 add store
                     f value readline
                     /ok exch def
@@ -188,6 +192,7 @@
                         exit
                     }if
                     /value exch store
+                    (Key: ) key concatstrings Debug        
                     (Value: ) value concatstrings Debug        
                     kvstore key value put
                     (Put successful) Debug
@@ -195,7 +200,7 @@
 
                 (D) { % Delete all items from dictionary
                     % D
-                    % Returns nothing
+                    % -Returns nothing
 
                     kvstore{
                         pop
@@ -213,30 +218,19 @@
 
 
                 (g) { % get value with key
-                    % g
-                    % key
-                    % Returns
-                    % If not found:
+                    % g key
+                    % -Returns
+                    % -If not found:
                     % f
-                    % If found:
+                    % -If found:
                     % t
                     % value
-                    
-                    /key keySize string def
 
-                    /lineCount lineCount 1 add store
-                    f key readline
-                    /ok exch def
-                    ok not{
-                        exit
-                    }if
-                    /key exch store
-
-                    key isValidInput not{
-                        (/kv: key line requires first position to be a space; have: [) key 0 1 getinterval concatstrings  (]) concatstrings Error
-                        stop
-                    }if
+                    % Validate line
+                    line commandKeyValidate
                     
+                    /key line 2 line length -2 add getinterval def
+
                     debug{
                         ( Key: [) key concatstrings (]) concatstrings Debug
                     }if
@@ -270,22 +264,19 @@
                 }
 
                 (d) {
-                    /key keySize string def
+                    % Validate line
+                    line commandKeyValidate
+                    
+                    /key line 2 line length -2 add getinterval def
 
-
-                    /lineCount lineCount 1 add store
-                    f key readline
-                    /ok exch def
-                    ok not{
-                        exit
-                    }if
-                    /key exch store
+                    
+                    kvstore key undef
                     debug{
                         %( Count: ) kvstore count 16 string cvs concatstrings Debug
-                        ( Key: )  key concatstrings Debug
+                        ( Deleted key: )  key concatstrings Debug
                     }if
 
-                    kvstore key undef
+                    
                 }
 
                 (k) { % List keys:
@@ -293,14 +284,8 @@
                     % startN endN
                     ( List keys) Debug
                     /range 32 string def
-                    /lineCount lineCount 1 add store
-
-                    f range readline
-                    /ok exch def
-                    ok not{
-                        exit
-                    }if
-                    /range exch store
+                   
+                    /range line 2 line length -2 add getinterval store
                     
                     % Extract start and end range
                     range token{
@@ -412,6 +397,20 @@
     }if
 }bind def
 
+/commandKeyValidate{ % expects k value
+    1 dict begin
+    /line exch def
+
+    line length 3 lt{
+        (/kv: line is too short; needs to be at least 3 characters) Error
+    }if
+    
+    line 1 1 getinterval ( ) ne{
+        (/kv: Second character in line must be a space) Error
+    }if
+    
+    end
+}def
 
 % /kv2{
 %     (KV2 start) Debug

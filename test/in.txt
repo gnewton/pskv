@@ -1,26 +1,15 @@
-p
-10
+p 10
 12933
-p
-454
+p 454
 (value for 454)
-p
-(mm)
+p (mm)
 (value for (mm))
-g
-(mm)
-g
-(41)
-g
-454
-d
-10
-k
-0 20
-d
-454
-g
-10
-d
-(mm)
+g (mm)
+g (41)
+g 454
+d 10
+k 0 20
+d 454
+g 10
+d (mm)
 c
