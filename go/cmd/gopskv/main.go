@@ -12,7 +12,7 @@ import (
 
 func main() {
 
-	cmd := exec.Command("gs", "-sDEVICE=nullpage", "-q", "-dNOPAUSE", "-dBATCH", "../../../kv.ps")
+	cmd := exec.Command("/home/gnewton/local/bin/gs", "-sDEVICE=nullpage", "-q", "-dNOPAUSE", "-dBATCH", "../../../kv.ps")
 
 	in, err := cmd.StdinPipe()
 	if err != nil {
@@ -66,14 +66,24 @@ func main() {
 
 		fmt.Println("stderr Reader: END")
 	}()
+	var by int64
 
 	go func() {
 		fmt.Println("Writer: start")
 
-		for i := 0; i < 100000000; i++ {
+		by = 0
+
+		for i := 0; i < 1000000; i++ {
 			s := strconv.Itoa(i)
-			in.Write([]byte("p " + "K_" + s + "\n"))
-			in.Write([]byte(s + "\n"))
+			//key := "p " + "K" + s + "\n"
+			key := "p " + s + "\n"
+			in.Write([]byte(key))
+			by += int64(len([]byte(key)))
+
+			//value := s + "\n"
+			value := "V\n"
+			in.Write([]byte(value))
+			by += int64(len([]byte(value)))
 		}
 
 		in.Write([]byte("p 10\n"))
@@ -83,6 +93,7 @@ func main() {
 		in.Write([]byte("c\n"))
 		in.Write([]byte("g 10\n"))
 		in.Write([]byte("c\n"))
+		in.Write([]byte("b\n"))
 		//in.Write([]byte("k 0 100\n"))
 		//in.Write([]byte("D\n"))
 		in.Write([]byte("Q\n"))
@@ -93,5 +104,5 @@ func main() {
 	if err := cmd.Wait(); err != nil {
 		fmt.Println("Wait: could not run command: ", err)
 	}
-
+	fmt.Println("Bytes=", by/1024/1024, " MB")
 }

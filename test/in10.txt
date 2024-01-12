@@ -1,4 +1,4 @@
-p k0
+ p k0
 v0
 p k1
 v1
@@ -30,8 +30,12 @@ k 7 12
 D
 p 145
 value for 145
+p 145k
+value for 145k
 p foo
 value for foo
+d foo
+D
 c
 k 0 100
 Q

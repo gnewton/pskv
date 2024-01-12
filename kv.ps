@@ -1,4 +1,5 @@
 
+
 %(Start) =
 %/f (in.txt) (r) file def
 /f (%stdin) (r) file def
@@ -7,6 +8,8 @@
 /out (%stdout) (w) file def
 
 /err (%stderr) (w) file def
+
+/bytes 0 def
 
 /keySize 100 def
 /valueSize 1024 def
@@ -52,6 +55,7 @@
     debug{
         1 dict begin
         /msg exch def
+
         %(% ) msg concatstrings =
         err (%  ) msg concatstrings (\n) concatstrings writestring
         err flushfile
@@ -64,9 +68,22 @@
 /Error{
     1 dict begin
     /msg exch def
-    %(% ) msg concatstrings =
+
+    vmstatus
+    /vmmax exch def
+    /vmused exch def
+    pop
+    /vmmax vmmax 1024 div 1024 div store
+    /vmused vmused 1024 div 1024 div store
+
+    err (%  Error: Max ) vmmax 32 string cvs concatstrings ( MB\n) concatstrings writestring
+    err (%  Error: Used ) vmused 32 string cvs concatstrings ( MB\n) concatstrings writestring
+    
     err (%  Error: ) msg concatstrings (\n) concatstrings writestring
     err (%  Error: Input line #) lineCount 16 string cvs concatstrings (\n) concatstrings writestring
+    err (%  Error: Bytes: ) bytes 1024 div 1024 div 32 string cvs concatstrings (MB \n) concatstrings writestring
+
+
     err flushfile
     /kv cvx /typecheck signalerror
     closeFilesAndQuit
@@ -75,9 +92,15 @@
 }def
 
 /closeFilesAndQuit{
-    (Stack start) Debug
-    stack
-    (Stack end) Debug
+    %countdictstack =
+    %countexecstack =
+
+    %/es countexecstack array def
+    %es execstack
+    %(1)=
+    %es length =
+    %(2)=
+    
     (Closing stdin) Debug
     f flushfile
     f closefile
@@ -143,6 +166,7 @@
     {
         {
             (-------------------) Debug
+            %countexecstack =
             /cmd keySize 2 add string store
 
             /lineCount lineCount 1 add store
@@ -190,6 +214,9 @@
                     /key line 2 line length -2 add getinterval def
 
                     /value valueSize string def
+
+                    /bytes bytes key length add value length add store
+                    
                     /lineCount lineCount 1 add store
                     f value readline
                     /ok exch def
@@ -219,6 +246,8 @@
                     debug{
                         (Dict Count=) kvstore length 16 string cvs concatstrings Debug
                     }if
+
+                    /bytes 0 store
                 }
 
 
@@ -268,17 +297,32 @@
                     out flushfile
                 }
 
+                (b) { % Num bytes stored: key + value
+                    % b
+                    % Returns num found:
+                    % n
+                    debug{
+                        ( Bytes: )  bytes 16 string cvs concatstrings Debug
+                    }if
+                    out bytes 16 string cvs writestring
+                    out (\n) writestring
+
+                    out flushfile
+                }
+
                 (d) {
                     % Validate line
                     line commandKeyValidate
-                    
+
                     /key line 2 line length -2 add getinterval def
 
+                    kvstore key known{
+                        /bytes bytes kvstore key get length sub key length sub store
+                    }if
                     
                     kvstore key undef
                     debug{
-                        %( Count: ) kvstore count 16 string cvs concatstrings Debug
-                        ( Deleted key: )  key concatstrings Debug
+                        ( Deleted key: )  key bracket concatstrings Debug
                     }if
 
                     
@@ -417,8 +461,8 @@
     end
 }def
 
-kv
 
+kv
 
 
 
