@@ -1,0 +1,83 @@
+
+/numDicts 0 def
+/numDefsInDict 0 def
+/numDefsTotal 0 def
+
+(Start) =
+flush 
+0 1 300{
+    /i exch def
+    i =
+    numDefsTotal =
+    usertime 1000 div cvi =
+    /tmp 10 dict def
+    i 10 string cvs cvn 10 dict def
+    currentdict i 10 string cvs cvn get begin
+    flush
+    0 1 1000000{
+        /i exch store
+        /s i 16 string cvs cvn  def
+        currentdict s (foo bar mmm)  put
+        /numDefsTotal numDefsTotal 1 add store
+    }for
+    end
+%    tmp name def
+%    name type =
+    () =
+}for
+
+quit
+
+{        d =
+        d type =
+        d 100 dict def
+        d type =
+        /tmp 100 dict def
+        d tmp def
+        d type =
+        0 1 1000000{
+            /i exch store
+            /s i 16 string cvs cvn  def
+            s type =
+            currentdict type =
+            d s (foo)  put
+        }for
+    % stopped{
+    %     (Max num defs: ) =
+    %     i =
+    %     d length =
+    %     quit
+    % }if
+}forall
+
+(0000) =
+quit
+
+[/a /b /c]{
+    {
+        0 1 10000000{
+            /i exch store
+            /s i 16 string cvs def
+            s cvn 2 dict def
+        }for
+    }stopped{
+        (Max num dicts: ) =
+        i =
+        currentdict length =
+    }if
+}forall
+
+
+(------------) =
+
+currentdict length =
+
+% 0 1 100{
+%     /i exch def
+%     /s i 16 string cvs def
+%     () =
+%     i =
+%     s =
+%     currentdict s get =
+
+% }for
