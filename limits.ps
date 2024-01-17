@@ -3,28 +3,118 @@
 /numDefsInDict 0 def
 /numDefsTotal 0 def
 
+%% /concatstrings derived from https://stackoverflow.com/questions/12378904/postscript-concatenate-two-strings
+/concatstrings % (a) (b) -> (ab)  
+{
+    count 2 lt{
+        (% Error: /concatstrings: needs two args) =
+        $error /errorname /stackunderflow put
+        stop
+    }if
+
+    0 index type /stringtype ne{
+        (% Error: /concatstrings: first arg not string) =
+        $error /errorname /typecheck put
+        stop
+    }if
+
+    1 index type /stringtype ne{
+        (% Error: /concatstrings: second arg not string) =
+        $error /errorname /typecheck put
+        stop
+    }if
+
+    % body
+    exch dup length    
+    2 index length add string    
+    dup dup 4 2 roll copy length
+    4 -1 roll putinterval
+} bind def
+
+
 (Start) =
-flush 
-0 1 300{
-    /i exch def
-    i =
+flush
+
+/DictName (BASE_Dict)  def
+
+/dictCounter 0 def
+
+100 dict begin
+
+% Number of dicts
+0 1 7{
+    () =
+    /ndict exch def
+    
     numDefsTotal =
     usertime 1000 div cvi =
     /tmp 10 dict def
-    i 10 string cvs cvn 10 dict def
-    currentdict i 10 string cvs cvn get begin
+    %(DICT__) dictCounter 10 string cvs concatstrings cvn 10 dict def
+
     flush
+    /DictName (DICT__) dictCounter 10 string cvs concatstrings def
+
+    DictName cvn 10 dict def
+
+
+    (Writing into dict:) currentdict /DictName get 10 string cvs concatstrings =
+    
+    % Number of entries per dict
     0 1 1000000{
-        /i exch store
-        /s i 16 string cvs cvn  def
-        currentdict s (foo bar mmm)  put
-        /numDefsTotal numDefsTotal 1 add store
+        /j exch store
+        j 100000 mod 0 eq{
+            ndict 1000000 mul j add =
+            flush
+        }if
+        
+        {
+            %currentdict (DICT__) dictCounter 10 string cvs concatstrings cvn get
+            currentdict DictName get 
+             j 16 string cvs cvn
+             (foo bar mmm)  put
+            
+            /numDefsTotal numDefsTotal 1 add store
+        }stopped{
+            (!!!!!!!) =
+            j =
+
+            20 dict begin
+            /dictCounter dictCounter 1 add store
+            currentdict DictName get
+             j 16 string cvs cvn
+             (foo bar mmm)  put
+            (OK) =
+            end
+        }if
     }for
-    end
-%    tmp name def
-%    name type =
+    /dictCounter dictCounter 1 add store
     () =
+    flush
 }for
+
+currentdict length =
+() =
+
+(0000) =
+currentdict /DICT__0 get length =
+currentdict /DICT__1 get length =
+currentdict /DICT__2 get length =
+currentdict /DICT__3 get length =
+currentdict /DICT__4 get length =
+currentdict /DICT__5 get length =
+currentdict /DICT__6 get length =
+
+
+
+currentdict /DICT__0 get currentdict /DICT__1 get eq{
+    (!!!!!!!!!!!!!!!) =
+}if
+
+
+
+end
+
+
 
 quit
 
@@ -50,7 +140,8 @@ quit
     % }if
 }forall
 
-(0000) =
+(------------) =
+
 quit
 
 [/a /b /c]{
@@ -68,9 +159,6 @@ quit
 }forall
 
 
-(------------) =
-
-currentdict length =
 
 % 0 1 100{
 %     /i exch def
@@ -81,3 +169,4 @@ currentdict length =
 %     currentdict s get =
 
 % }for
+

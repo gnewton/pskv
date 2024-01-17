@@ -1,0 +1,272 @@
+
+
+/working# 1000 dict def
+/kvstore# 1000 dict def
+
+working# begin
+/DictName (WorkingDict) def
+
+/dictCounter 0 def
+/numDicts 5 def
+
+/limit 1000000 def
+/limitIncrement 1000000 def
+
+/makeDicts{
+    /DictName (BASE_Dict)  def
+    working# begin    
+    0 1 numDicts 1 sub
+    {
+        /i exch def
+
+        i newDictName 100 dict def
+        working# i newDictName get begin
+        /DictName (DictName_) i 16 string cvs concatstrings def
+        end % newDict
+
+    }for
+    
+    % numDicts 1 sub
+    % {
+    %     (Popping dict) =
+    %     end
+    % }repeat
+    end % working#
+}def
+
+
+%% /concatstrings derived from https://stackoverflow.com/questions/12378904/postscript-concatenate-two-strings
+
+/concatstrings % (a) (b) -> (ab)  
+{
+    count 2 lt{
+        (% Error: /concatstrings: needs two args) =
+        $error /errorname /stackunderflow put
+        stop
+    }if
+
+    0 index type /stringtype ne{
+        (% Error: /concatstrings: first arg not string) =
+        $error /errorname /typecheck put
+        stop
+    }if
+
+    1 index type /stringtype ne{
+        (% Error: /concatstrings: second arg not string) =
+        $error /errorname /typecheck put
+        stop
+    }if
+
+    % body
+    exch dup length    
+    2 index length add string    
+    dup dup 4 2 roll copy length
+    4 -1 roll putinterval
+} bind def
+
+/newDictName{
+    1 dict begin
+    /n exch def
+
+    working# begin
+    (Dict__) n 10 string cvs concatstrings cvn
+    (Dict__) n 10 string cvs concatstrings =
+    end
+    end
+}def
+
+end % working#
+
+
+kvstore# begin
+
+end
+
+/Error{
+    =
+    stop
+}def
+
+% dict /proc run
+/rn{
+
+    10 dict begin
+    /proc exch def
+    /dict# exch def
+
+    (lll) =
+    dict# proc known{
+        (Fond) =
+        dict# proc get exec 
+    }{
+        (Error: proc /) =
+        proc =
+        flush
+        stop
+    }ifelse
+    
+    end
+}bind def
+
+/switch{
+    count 3 lt{
+        (/switch: need 3 args: value being tested, case dictionary, default fall through executable) Error
+    }if
+    
+    0 index type /arraytype ne{
+        (/switch: default must be an executable array) Error
+    }{
+        0 index xcheck not{
+            (/switch: default is array but not an executable array) Error
+        }if
+    }ifelse
+
+    1 index type /dicttype ne{
+        (/switch: case statements must be a dictionary) Error
+    }if
+
+    % body
+    3 dict begin
+    /default exch def
+    /dic# exch def
+    /switch_value exch def
+
+    % body
+    dic# switch_value known {
+        dic# switch_value get exec
+    }{
+        default
+    }ifelse
+    end
+}bind def
+
+
+/concat{
+    toString exch toString concatstrings
+}def
+
+/toString{
+    1 dict begin
+    /v exch def
+    /vtype v type 32 string cvs def
+    
+    vtype
+    <<
+        (nametype) {
+            v dup type length string cvs
+        }
+
+        (stringtype) {
+            v
+        }
+
+        (integertype) {
+            v 32 string cvs
+        }
+
+        (realtype) {
+            v 32 string cvs
+        }
+
+        (booleantype) {
+            (---) =
+            v =
+            (---) =
+            v true eq{
+                (true)
+            }{
+                (false)
+            }ifelse
+            
+        }
+
+        (dicttype) {
+            (type=dict)
+        }
+
+        (arraytype) {
+            (type=array) =
+        }
+    >>
+    {
+        (Unknowntype) =
+    }
+    switch
+
+    end
+}bind def
+
+(mm) =
+
+
+/filler{
+    working# /makeDicts rn
+    %whichDict
+
+    (MMM) =
+
+    working# begin
+
+    % Look up sub dict and put on stack
+    working# 0 newDictName known not{
+        (FAIL ) =
+        stop
+    }{
+        (OK) =
+        /thisDict# working# 0 newDictName get def
+        thisDict# ===
+
+        0 1 1200000{
+            /i exch store
+            i limit gt{
+                /limit limit limitIncrement add store
+                working# begin
+                /dictCounter dictCounter 1 add store
+                dictCounter newDictName =
+                /thisDict# working# dictCounter newDictName get store
+                (777) =
+                end
+            }if
+                
+            {
+                i 100000 mod 0 eq{
+                    i =
+                    flush
+                }if
+                thisDict# begin
+                thisDict#  i 32 string cvs cvn (foo bar mmm)  put
+                end
+            }
+            stopped
+            {
+                thisDict# /DictName get =
+                () =
+                 $error /errorname get =
+                 $error /newerror false put
+                 $error /errorname null put 
+                 
+                (+++++++++++++++++++++++++++++++++++++++++++++++++++++++) =
+                working# begin
+                (A) =
+                /dictCounter dictCounter 1 add store
+                dictCounter =
+                (B) =
+                dictCounter newDictName =
+                (C) =
+                 /thisDict# working# dictCounter newDictName get store
+                 thisDict# i 32 string cvs cvn (foo bar mmm)  put
+                 end
+                 
+                 (============================================================================) =
+                 stop
+            }if
+
+        }for
+    }ifelse
+}def
+
+
+
+working# ===
+
+filler

@@ -1,0 +1,362 @@
+
+
+/newStoreDict{
+    <<
+        /ID rand 
+        /working#<<
+                     /StoreDictName null
+
+                     /counter 0
+                     /max 110000
+                 >>
+                
+        /store#
+        <<
+        >>
+
+        /dictName{
+            working# /StoreDictName get
+        }bind def
+
+        /full?{ % _ -> bool
+            working# /counter get working# /max get gt{
+                true
+            }{
+                false
+            }ifelse
+        }def
+
+        /count{ % _ -> int
+            working# /counter get
+        }def
+
+        /getMax{ % _ -> int
+            working# /max get
+        }def
+        
+        /setMax{ % _ -> int
+            /m exch def
+            working# /max m put
+        }def
+            
+
+        /delete % key ->  true | false
+        {
+            1 dict begin
+            /key exch def
+
+            store# key known {
+                store# key undef
+                working# /counter working# /counter get 1 sub put
+                true
+            }{
+                false
+            }ifelse
+            end
+        }
+
+        /exists % key ->  true | false
+        {
+            store# exch known 
+        }def
+        
+        /getter % key -> value true | false
+        {
+            1 dict begin
+            /key exch def
+
+            store# key known not{
+                false
+            }{
+                store# key get
+                true
+            }ifelse
+            end
+        }def
+        
+        /putter % key value -> _
+        {
+            2 dict begin
+            /value exch def
+            /key exch def
+
+            {
+                store# key known not{
+                    working# /counter working# /counter get 1 add put
+                }if
+            }stopped{
+                (!!!!!!!!!!!!!!!!) =
+                working# /StoreDictName get =
+                stop
+            }if
+            store# key value put
+            end
+        }def
+    >>
+}def
+
+/switch{
+    count 3 lt{
+        (/switch: need 3 args: value being tested, case dictionary, default fall through executable) Error
+    }if
+    
+    0 index type /arraytype ne{
+        (/switch: default must be an executable array) Error
+    }{
+        0 index xcheck not{
+            (/switch: default is array but not an executable array) Error
+        }if
+    }ifelse
+
+    1 index type /dicttype ne{
+        (/switch: case statements must be a dictionary) Error
+    }if
+
+    % body
+    3 dict begin
+    /default exch def
+    /dic# exch def
+    /switch_value exch def
+
+    % body
+    dic# switch_value known {
+        dic# switch_value get exec
+    }{
+        default
+    }ifelse
+    end
+}bind def
+
+/toString{
+    1 dict begin
+    /v exch def
+    /vtype v type 32 string cvs def
+    
+    vtype
+    <<
+        (nametype) {
+            v dup type length string cvs
+        }
+
+        (stringtype) {
+            v
+        }
+
+        (integertype) {
+            v 32 string cvs
+        }
+
+        (realtype) {
+            v 32 string cvs
+        }
+
+        (booleantype) {
+            %v true eq{
+            v{
+                (true)
+            }{
+                (false)
+            }ifelse
+            
+        }
+
+        (dicttype) {
+            (type=dict)
+        }
+
+        (arraytype) {
+            (type=array) =
+        }
+    >>
+    {
+        (Unknowntype) =
+    }
+    switch
+
+    end
+}bind def
+
+
+/d1 newStoreDict def
+/d2 newStoreDict def
+
+d2 /bar 23 put
+
+d1 type =
+
+d1 begin
+(key 22) (value 22) putter
+(aaaa) 999 putter
+(aaaa) 999 putter
+end
+
+(d1) =
+d1 ===
+%d1 /store get ===
+%d1 /counter get =
+() =
+() =
+(d2) =
+d2 ===
+%d2 /store get ===
+%d2 /counter get =
+
+
+d1 /working# get /counter get =
+
+d1 /working# get /max get =
+%d1 /working# get /mmm2 get =
+
+d1 begin
+(aaaa) getter{
+ =
+}if
+
+(aaaa) exists =
+(Count before) =
+count =
+(aaaa) delete
+(Count after) =
+count =
+(aaaa) exists =
+
+(aaaa) getter{
+ =
+}{
+    (Not found) =
+}ifelse
+
+
+getMax =
+20234 setMax
+getMax =
+end
+
+
+
+/arrayAppendTo{ % item array
+    /i exch def
+    /a exch def
+
+    /ia [i] def
+   
+    /z a length 1 add array def
+   
+    z 0 a putinterval
+    z a length ia putinterval
+   
+    z
+}bind def
+
+
+/kvDict#{
+    <<
+        /kvworking#<<
+                       /storeDicts []
+                >>
+
+        
+        /stats{
+            10 dict begin
+            () =
+            (----------------------STATS-------------------------) =
+            (Num dicts: ) kvworking# /storeDicts get length toString concatstrings =
+            (Dict#) =
+            (-----) =
+            kvworking# /storeDicts get{
+                begin
+                dictName (: ) concatstrings working# /counter get toString concatstrings =
+                ID  =
+                end
+            }forall
+            
+            (----------------------------------------------------) =
+            () =
+            end
+        }bind def
+        
+        /addDict{
+            10 dict begin
+            /tmpStoreDict# newStoreDict def
+            tmpStoreDict# /working# get /StoreDictName makeDictName put
+            (New Dict: ) makeDictName concatstrings =
+
+            kvworking# /storeDicts kvworking# /storeDicts get tmpStoreDict# arrayAppendTo put
+            stats
+            flush
+            % Leave on stack
+            tmpStoreDict#
+            end
+        }bind def
+
+        /makeDictName{
+            (Dict_) kvworking# /storeDicts get  length toString concatstrings
+        }bind def
+
+        
+        /initKVDict{
+            addDict
+            pop
+        }def
+
+        /putt{
+            /stored false def
+            2 dict begin % local
+            /value exch def
+            /key exch def
+
+            /added false def
+            % Try to add to existing store dicts
+            kvworking# /storeDicts get{
+                /d# exch def
+                
+                d# begin
+                full? not{
+                    {
+                        key value putter
+                    }stopped{
+                        stats
+                        quit
+                    }if
+                    /added true store
+                    end
+                    exit
+                }if
+                end
+            }forall
+
+            added not{
+                2 dict begin
+                addDict begin
+                key value putter
+                end
+            }if
+            
+            end % local
+        }def
+    >>
+}bind def
+
+/k kvDict# def
+
+k begin
+initKVDict
+
+
+10 dict begin
+0 1 25000000{
+    /i exch def
+    i 100000 mod 0 eq{
+        i =
+        flush
+    }if
+    
+    /key (K___) i toString concatstrings def
+    key (foobar55) putt
+}for
+end
+
+
+stats
+end
+

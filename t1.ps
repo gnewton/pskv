@@ -1,0 +1,142 @@
+
+
+
+%% /concatstrings derived from https://stackoverflow.com/questions/12378904/postscript-concatenate-two-strings
+/concatstrings % (a) (b) -> (ab)  
+{
+    count 2 lt{
+        (% Error: /concatstrings: needs two args) =
+        $error /errorname /stackunderflow put
+        stop
+    }if
+
+    0 index type /stringtype ne{
+        (% Error: /concatstrings: first arg not string) =
+        $error /errorname /typecheck put
+        stop
+    }if
+
+    1 index type /stringtype ne{
+        (% Error: /concatstrings: second arg not string) =
+        $error /errorname /typecheck put
+        stop
+    }if
+
+    % body
+    exch dup length    
+    2 index length add string    
+    dup dup 4 2 roll copy length
+    4 -1 roll putinterval
+} bind def
+
+/newDictName{
+    /n exch def
+    (D_) n 10 string cvs concatstrings cvn
+}def
+
+
+/addTempEntry{
+    /foooo (000000000000000000000000000000000000000000)  def
+}def
+
+/deleteTempEntry{
+    currentdict /foooo undef
+}def
+
+
+/makeDicts{
+    /cd currentdict def
+    /ndicts exch def
+
+    /DictName (BASE_Dict)  def
+    
+    0 1 ndicts 1 sub
+    {
+        /i exch def
+        i newDictName 100 dict def
+        currentdict i newDictName get begin
+        i newDictName =
+        /DictName (DictName_) i 16 string cvs concatstrings def
+        %end
+    }for
+
+     ndicts
+     {
+         (Popping dict) =
+         end
+     }repeat
+}def
+
+/whichDict{
+    (Writing into dict: ) currentdict /DictName get 40 string cvs  concatstrings =
+}def
+
+/filler{
+    50 makeDicts
+    whichDict
+
+    /dictCounter 0 def
+    (MMM) =
+
+    % Look up sub dict and put on stack
+
+    currentdict dictCounter newDictName get begin
+    dictCounter newDictName =
+
+    (Found) =
+    /dictCounter dictCounter 0 add store
+
+    (Using new dict:) dictCounter newDictName 30 string cvs concatstrings =
+    
+    0 1 1200000{
+        flush
+        /i exch store
+        {
+            i 100000 mod 0 eq{
+                i =
+            }if
+            %currentdict dictCounter newDictName get i 32 string cvs cvn (foo bar mmm)  put
+            currentdict i 32 string cvs cvn (foo bar mmm)  put
+        }
+        stopped
+        {
+            () =
+            /dictCounter dictCounter 1 add store
+            (--------------New dict) =
+            whichDict
+            currentdict dictCounter newDictName get begin
+            whichDict
+            $error /errorname get =
+            i =
+            dictCounter =
+            (#dicts) =
+            countdictstack =
+            (Current dict: ) currentdict /DictName get concatstrings =
+            deleteTempEntry
+            flush
+
+            (Using new dict:) dictCounter newDictName 30 string cvs concatstrings =
+            currentdict count =
+            %end
+            % Look up new dict and put on stack
+            %currentdict dictCounter newDictName get begin
+            currentdict /DictName get =
+
+            (#dicts +) =
+            countdictstack =
+            (EE)=
+            flush
+            %(Putting into dict) currentdict dictCounter newDictName get /DictName get concatstrings =
+            (Putting into dict) currentdict  /DictName get concatstrings =
+            flush
+            currentdict  i 32 string cvs cvn (foo bar mmm)  put
+            %currentdict dictCounter newDictName get i 32 string cvs cvn (foo bar mmm)  put
+            (EE--)=
+            flush
+
+        }if
+
+    }for
+}def
+
+filler
