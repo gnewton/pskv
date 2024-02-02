@@ -1,0 +1,209 @@
+
+/util# 1000 dict def
+
+util# begin 
+
+/_Name (util#) def
+
+/Error{
+    (ERROR) =
+    =
+    (Stopping) =
+    () =
+    stop
+}bind def
+
+/stackk{
+    () =
+    (--STACK START-------------------) =
+    stack
+    (--STACK END-------------------) =
+    () =
+}def
+
+/concatstrings % (a) (b) -> (ab)  
+{
+    count 2 lt{
+        (% Error: /concatstrings: needs two args) =
+        $error /errorname /stackunderflow put
+        stop
+    }if
+
+    0 index type /stringtype ne{
+        (% Error: /concatstrings: first arg not string) =
+        $error /errorname /typecheck put
+        stop
+    }if
+
+    1 index type /stringtype ne{
+        (% Error: /concatstrings: second arg not string) =
+        $error /errorname /typecheck put
+        stop
+    }if
+
+    % body
+    exch dup length    
+    2 index length add string    
+    dup dup 4 2 roll copy length
+    4 -1 roll putinterval
+} bind def
+
+
+/spcwd{ % nspaces string
+    count 2 lt{
+        (/spcwd: not enough arguments; need 2) Error
+    }if
+    
+    0 index type /stringtype ne{
+        (/spcwd: First arg not string) Error
+    }if
+
+    1 index type /integertype ne{
+        (/spcwd: Second arg not int) Error
+    }if
+
+    % body
+    2 dict begin
+    /str exch def
+    /n exch def
+    n spaces str concatstrings 
+    end
+}def
+
+/spaces{
+    0 index type /integertype ne{
+        (/spaces: arg not int) Error
+    }if
+
+    % body
+    1 dict begin
+    /n exch def
+
+    /sp () def
+    n{
+        /sp sp ( ) concatstrings store
+    }repeat
+    sp
+    end
+}def
+
+/switch{
+    count 3 lt{
+        (/switch: need 3 args: value being tested, case dictionary, default fall through executable) Error
+    }if
+    
+    0 index type /arraytype ne{
+        (/switch: default must be an executable array) Error
+    }{
+        0 index xcheck not{
+            (/switch: default is array but not an executable array) Error
+        }if
+    }ifelse
+
+    1 index type /dicttype ne{
+        (/switch: case statements must be a dictionary) Error
+    }if
+
+    % body
+    3 dict begin
+    /default exch def
+    /dic# exch def
+    /switch_value exch def
+
+    % body
+    dic# switch_value known {
+        dic# switch_value get exec
+    }{
+        default
+    }ifelse
+    end
+}bind def
+
+/toString{
+    1 dict begin
+    /v exch def
+    /vtype v type 32 string cvs def
+
+    vtype
+    <<
+        (nametype) {
+            flush
+            v dup type length string cvs
+        }
+
+        (stringtype) {
+            flush
+            v
+        }
+
+        (integertype) {
+            flush
+            v 32 string cvs
+        }
+
+        (realtype) {
+            flush
+            v 32 string cvs
+        }
+
+        (booleantype) {
+            v{
+                (true)
+            }{
+                (false)
+            }ifelse
+            
+        }
+
+        (dicttype) {
+            flush
+            ([--dict--])
+        }
+
+        (arraytype) {
+            v aToString
+        }
+    >>
+    {
+        (Unknowntype)
+    }
+    switch
+    end
+}bind def
+
+/aToString{ % [array of things]
+    3 dict begin
+    /first true def
+    /s () def
+    {
+        /v exch def
+        first{
+            /first false store
+        }{
+            /s s ( ) concatstrings store
+        }ifelse
+        /s s v toString concatstrings store
+    }forall
+    s 
+    end
+}bind def
+
+/markToString{
+    10 dict begin
+    /n counttomark def
+
+    /s () def
+    n 1 sub -1 1{
+        /i exch def
+        /p i index toString def
+        s length 0 ne{
+            /s s ( ) concatstrings store
+        }if
+        /s s p concatstrings store
+    }for
+    cleartomark
+    s
+    end
+}def
+
+end % util#

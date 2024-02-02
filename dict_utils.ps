@@ -1,0 +1,82 @@
+
+
+(util.ps) run
+
+util# begin 
+
+/dictPrint{
+    2 dict begin
+    /depth exch def
+    /d exch def
+
+    depth 5 lt{
+        depth 1 sub (<<) spcwd =
+        flush
+        
+        d{
+            /v exch def
+            /k exch def
+            
+            k type /stringtype ne{
+                /ks k toString def
+            }{
+                /ks k def
+            }ifelse
+            
+            depth (Key: ) ks concatstrings spcwd =
+            [v] 0 get type /dicttype eq{
+                    depth mark
+                    ( Value: --dict-- [length =) v length (]) markToString spcwd =
+                }{
+                    depth mark
+                    ( Value: ) v markToString spcwd =
+                }ifelse
+
+        }forall
+        depth 1 sub (>>) spcwd =
+    }if
+    end
+    () =
+    flush
+}def
+
+/t1# 10 dict def
+/t2# 10 dict def
+
+
+t2# begin
+/super (100) def
+end
+
+t1# begin
+/foo (bar) def
+/procbb 43 def
+/d t2# def
+end
+
+
+(Start) =
+%t1 ===
+(mmmmmmmmmmmmmmmmmmmmmmmmmmmmm) =
+flush
+t1# 2 dictPrint
+
+
+(End) =
+
+%currentdict ===
+
+() =
+(++++++++++++++++++++++++++++++++) =
+() =
+%currentdict 0 dp
+
+
+
+[10 (foo) 55.5 t1# [(foo) 346.9 23 (enddd)] ] aToString =
+
+mark (K) 10.0 (Simple) 12 23 45 add (foo) 343333 markToString =
+
+
+      
+end

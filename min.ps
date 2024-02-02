@@ -1,3 +1,86 @@
 
+%% /concatstrings derived from https://stackoverflow.com/questions/12378904/postscript-concatenate-two-strings
+/concatstrings % (a) (b) -> (ab)  
+{
+    count 2 lt{
+        (% Error: /concatstrings: needs two args) =
+        $error /errorname /stackunderflow put
+        stop
+    }if
 
+    0 index type /stringtype ne{
+        (% Error: /concatstrings: first arg not string) =
+        $error /errorname /typecheck put
+        stop
+    }if
+
+    1 index type /stringtype ne{
+        (% Error: /concatstrings: second arg not string) =
+        $error /errorname /typecheck put
+        stop
+    }if
+
+    % body
+    exch dup length    
+    2 index length add string    
+    dup dup 4 2 roll copy length
+    4 -1 roll putinterval
+} bind def
+
+
+%/dicts [/a /b /c] def
+/dicts [<<>> <<>>] def
+
+/base# 100 dict def
+
+base# begin
+
+/time 0 def
+/delta{
+    /now usertime def
+    now time sub
+    /time now store
+}bind def
+
+dicts{
+    /d# exch def
+%    base# d# get begin
+
+    1 1 100000000{
+        /i exch def
+        i 100000 mod 0 eq   i 12400000 gt or{ 
+            () =
+            i =
+            delta =
+            d# length =
+            flush
+        }if
+        {
+
+            d# i (1234347nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn nnnnnnnnnnnnnnnnnnnnnnnnnn nnnnnnnnnnnnnnnnnnnnnnnnnnnnn nnnnnnnnnnnnnnnnnnnnnnnnnnn) put
+            %d# i 10 string cvs (1234347nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn nnnnnnnnnnnnnnnnnnnnnnnnnn nnnnnnnnnnnnnnnnnnnnnnnnnnnnn nnnnnnnnnnnnnnnnnnnnnnnnnnn) put
+            
+        }stopped{
+            (===================) =
+            i =
+            base# length =
+            d# length =
+            (===================-------------) =
+            quit
+        }if
+    }for
+    
+    end
+}forall
+
+
+base length =
+base =
+
+dicts{
+    /d exch def
+    base d get length =
+}forall
+
+end %base dict
 
