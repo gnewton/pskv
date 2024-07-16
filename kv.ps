@@ -135,25 +135,25 @@
             (/switch: default is array but not an executable array) Error
         }if
     }ifelse
-    /default exch def
-    
+
+
+
     % Second arg must be dict
     1 index type /dicttype ne{
-        (==) =
-        1 index =
-        (++) =
-        (/switch: case statements must be a dictionary) Error
+        (/switch: case statements must be in a dictionary) Error
     }if
-    /dic exch def    
+
+    /default exch def
+    /#caseDict exch def    
     
     % value being checked can be anything
     /v exch def
 
     % body
-    dic v known not{
+    #caseDict v known not{
         default exec
     }{
-        dic v get exec
+        #caseDict v get exec
     }ifelse
     
 }bind def
