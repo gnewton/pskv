@@ -13,7 +13,7 @@
 /keySize 100 def
 /valueSize 1024 def
 
-/debug false def
+/debug true def
 
 %% /concatstrings derived from https://stackoverflow.com/questions/12378904/postscript-concatenate-two-strings
 /concatstrings % (a) (b) -> (ab)  
@@ -117,10 +117,17 @@
 
 
 /switch{
+    % Needs 3 args:
+    % 2:any type: value to be switched on
+    % 1:dict: keys are the match; values are the return value
+    % 0: executable array {}: default fall through return value
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
     count 3 lt{
         (/switch: need 3 args: value being tested, case dictionary, default fall through executable) Error
     }if
-    
+
+    % Top arg must be executable array
     0 index type /arraytype ne{
         (/switch: default must be an executable array) Error
     }{
@@ -128,14 +135,18 @@
             (/switch: default is array but not an executable array) Error
         }if
     }ifelse
-
+    /default exch def
+    
+    % Second arg must be dict
     1 index type /dicttype ne{
+        (==) =
+        1 index =
+        (++) =
         (/switch: case statements must be a dictionary) Error
     }if
+    /dic exch def    
+    
     % value being checked can be anything
-        
-    /default exch def
-    /dic exch def
     /v exch def
 
     % body

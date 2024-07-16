@@ -1,9 +1,11 @@
 
 /UseStringKey false def
+/NumEntriesPerDict 11000000 def
+/NumDicts 15 def
 
-/numDicts 0 def
-/numDefsInDict 100000 def
-/numDefsTotal 0 def
+
+
+/iNumDefsTotal 0 def
 
 %% /concatstrings derived from https://stackoverflow.com/questions/12378904/postscript-concatenate-two-strings
 /concatstrings % (a) (b) -> (ab)  
@@ -34,38 +36,27 @@
 } bind def
 
 
-(Start) =
-flush
-
-/DictName (BASE_Dict)  def
-
 /dictCounter 0 def
 
-100 dict begin
+%100 dict begin
 
 % Number of dicts
-0 1 7{
+1 1 NumDicts{
     () =
     /ndict exch def
     
-    numDefsTotal =
-    usertime 1000 div cvi =
-    /tmp 10 dict def
-    %(DICT__) dictCounter 10 string cvs concatstrings cvn 10 dict def
+    (Timestamp:) usertime 1000 div cvi 16 string cvs concatstrings =
+   /DictName ndict 10 string cvs def
 
-    flush
-    /DictName (DICT__) dictCounter 10 string cvs concatstrings def
-
-    DictName cvn 10 dict def
-
+   DictName cvn 10 dict def
 
     (Writing into dict:) currentdict /DictName get 10 string cvs concatstrings =
     
     % Number of entries per dict
-    1 1 numDefsInDict{
+    1 1 NumEntriesPerDict{
         /j exch store
         j 100000 mod 0 eq{
-            ndict 1000000 mul j add =
+            j  =
             flush
         }if
         
@@ -78,16 +69,19 @@ flush
             }ifelse
             (foo bar mmm)  put
             
-            /numDefsTotal numDefsTotal 1 add store
+            /iNumDefsTotal iNumDefsTotal 1 add store
         }stopped{
-            (!!!!!!!) =
-            j =
+            (ERROR: STOPPED) =
+            (********************) =
+            (ERROR is: ) $error /errorname get 64 string cvs concatstrings =
+            (********************) =
+            (Key number=) j 16 string cvs concatstrings =
 
             20 dict begin
             /dictCounter dictCounter 1 add store
             currentdict DictName get
-            j 16 string cvs cvn
-            (foo bar mmm)  put
+             j 16 string cvs cvn
+             (foo bar mmm)  put
             (OK) =
             end
             QUIT
@@ -98,29 +92,15 @@ flush
     flush
 }for
 
-currentdict length =
-() =
+ (------Dictionaries----------) =
+1 1 NumDicts{
+    /ndict exch def
+    /DictName ndict 10 string cvs def
+    
+    (Dictionary: ) DictName concatstrings
+    (  Length: ) concatstrings
+    currentdict DictName get length 10 string cvs concatstrings =
+}for
 
-(0000) =
-currentdict /DICT__0 get length =
-currentdict /DICT__1 get length =
-currentdict /DICT__2 get length =
-currentdict /DICT__3 get length =
-currentdict /DICT__4 get length =
-currentdict /DICT__5 get length =
-currentdict /DICT__6 get length =
-
-
-
-currentdict /DICT__0 get currentdict /DICT__1 get eq{
-    (!!!!!!!!!!!!!!!) =
-}if
-
-
-
-end
-
-
-
-quit
+%end
 
