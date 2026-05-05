@@ -1,6 +1,9 @@
 
 %(Start) =
 %/f (in.txt) (r) file def
+
+/kv_debug true def
+
 /f (%stdin) (r) file def
 
 %/out (out.txt) (w) file def
@@ -13,7 +16,7 @@
 /keySize 100 def
 /valueSize 1024 def
 
-/debug true def
+
 
 %% /concatstrings derived from https://stackoverflow.com/questions/12378904/postscript-concatenate-two-strings
 /concatstrings % (a) (b) -> (ab)  
@@ -51,12 +54,13 @@
 }def
 
 /Debug{
-    debug{
+    kv_debug{
         1 dict begin
         /msg exch def
 
         %(% ) msg concatstrings =
         err (%  ) msg concatstrings (\n) concatstrings writestring
+        %err (\n%  ) msg concatstrings writestring
         err flushfile
         end
     }{
@@ -100,9 +104,9 @@
     %es length =
     %(2)=
     
-    (Closing stdin) Debug
-    f flushfile
-    f closefile
+    % (Closing stdin) Debug
+    % f flushfile
+    % f closefile
 
     (Closing stdout) Debug
     out flushfile
@@ -150,11 +154,26 @@
     /v exch def
 
     % body
+    /before count def
     #caseDict v known not{
         default exec
     }{
         #caseDict v get exec
     }ifelse
+
+    /after count def
+
+    
+    (#########################################) =
+    (Before) =
+    before =
+    (After) =
+    after =
+    before after ne{
+        stack2
+    }if
+    (#########################################) =
+    () =
     
 }bind def
 
@@ -212,236 +231,15 @@
                 % n-1 th key
                 % n-1 th value
                 %
-                
-                (p) { % put key value
-                    % d key
-                    % value
-                    % -Returns: nothing
+                (b) kvCountBytes
+                (c) kvCount
+                (d) kvDeleteKey
+                (g) kvGet
+                (k) kvListKeysInRange
+                (p) kvPut
 
-                    % Validate line
-                    line commandKeyValidate
-                    
-                    /key line 2 line length -2 add getinterval def
-
-                    /value valueSize string def
-
-                    /bytes bytes key length add value length add store
-                    
-                    /lineCount lineCount 1 add store
-                    f value readline
-                    /ok exch def
-                    ok not{
-                        exit
-                    }if
-                    /value exch store
-                    (Key: ) key concatstrings Debug        
-                    (Value: ) value concatstrings Debug        
-                    kvstore key value put
-                    (Put successful) Debug
-                }
-
-                (D) { % Delete all items from dictionary
-                    % D
-                    % -Returns nothing
-
-                    kvstore{
-                        pop
-                        /key exch def
-                        kvstore key undef
-                        debug{
-                            (Deleting: ) key keySize string cvs concatstrings Debug
-                        }if
-
-                    }forall
-                    debug{
-                        (Dict Count=) kvstore length 16 string cvs concatstrings Debug
-                    }if
-
-                    /bytes 0 store
-                }
-
-
-                (g) { % get value with key
-                    % g key
-                    % -Returns
-                    % -If not found:
-                    % f
-                    % -If found:
-                    % t
-                    % value
-
-                    % Validate line
-                    line commandKeyValidate
-                    
-                    /key line 2 line length -2 add getinterval def
-
-                    debug{
-                        ( Key: [) key concatstrings (]) concatstrings Debug
-                    }if
-                    
-                    kvstore key known not{
-                        out (f\n) writestring
-                        ( not found ) Debug        
-                    }{
-                        out (t\n) writestring
-                        out kvstore key get writestring
-                        out (\n) writestring
-                        debug{
-                            ( Value: ) kvstore key get concatstrings Debug
-                        }if
-                    }ifelse
-                    out flushfile
-                }
-
-                (c) { % Num items stored
-                    % c
-                    % Returns num found:
-                    % n
-                    debug{
-                        %( Count: ) kvstore count 16 string cvs concatstrings Debug
-                        ( Dict #items: )  kvstore length 16 string cvs concatstrings Debug
-                    }if
-                    out kvstore length 16 string cvs writestring
-                    out (\n) writestring
-
-                    out flushfile
-                }
-
-                (b) { % Num bytes stored: key + value
-                    % b
-                    % Returns num found:
-                    % n
-                    debug{
-                        ( Bytes: )  bytes 16 string cvs concatstrings Debug
-                    }if
-                    out bytes 16 string cvs writestring
-                    out (\n) writestring
-
-                    out flushfile
-                }
-
-                (d) {
-                    % Validate line
-                    line commandKeyValidate
-
-                    /key line 2 line length -2 add getinterval def
-
-                    kvstore key known{
-                        /bytes bytes kvstore key get length sub key length sub store
-                    }if
-                    
-                    kvstore key undef
-                    debug{
-                        ( Deleted key: )  key bracket concatstrings Debug
-                    }if
-
-                    
-                }
-
-                (k) { % List keys:
-                    % k startN endN
-                    ( List keys) Debug
-                    /range 32 string def
-                   
-                    /range line 2 line length -2 add getinterval store
-                    
-                    % Extract start and end range
-                    range token{
-                        /startKey exch def
-                        token{
-                            /endKey exch def
-                        }{
-                            (/kv: Fail reading k endKey) Error
-                            exit
-                        }ifelse
-                    }{
-                        (/kv: Fail reading k startKey) =
-                        exit
-                    }ifelse
-                    pop % not sure what we are popping here but there is a space on the stack...?
-
-                    debug{
-                        ( Start: ) startKey 16 string cvs concatstrings (  End: ) concatstrings endKey 16 string cvs concatstrings Debug
-                    }if
-                    
-                    %Validate args
-                    % integers
-                    startKey type /integertype ne   endKey type /integertype ne  or{
-                        (/kv: start and end must be integers) Error
-                        exit
-                    }if
-
-                    % >= 0
-                    startKey 0 lt  endKey 0 lt or{
-                        (/kv: Start and end must be >= 0) Error
-                        exit
-                    }if
-
-                    % startKey < endKey
-                    startKey endKey lt not{
-                        (Start must be less than end) Error
-                        exit
-                    }if
-
-                    % body
-                    /dictLength kvstore length def
-
-                    % startKey greated than # items in dict
-                    startKey dictLength gt{
-                        ( #Items: ) Debug
-                        out (0\n) writestring
-                    }{
-                        % How many returned
-                        % Range entirely inside dictKey length
-                        endKey dictLength lt{
-                            debug{
-                                ( #Items: ) endKey startKey sub 1 add 16 string cvs concatstrings Debug
-                            }if
-                            out endKey startKey sub 1 add 16 string cvs writestring
-                            out (\n) writestring
-                        }{
-                            % Top Range larger than dictKey length (partial return)
-                            debug{
-                                ( #Items: ) dictLength startKey sub  16 string cvs concatstrings Debug
-                            }if
-                            out dictLength startKey sub  16 string cvs writestring
-
-                            out (\n) writestring
-
-                        }ifelse
-                        
-                        /keyCounter 0 def
-                        kvstore{
-                            keyCounter startKey ge   keyCounter endKey le and{
-
-                                debug{
-                                    (  ) keyCounter 16 string cvs concatstrings Debug
-                                }if
-                                pop % value                                
-                                /k exch def
-
-                                out k keySize string cvs writestring
-                                out (\n) writestring
-                            }{
-                                pop
-                                pop
-                            }ifelse
-
-                            /keyCounter keyCounter 1 add store
-
-                            % Above range?
-                            keyCounter endKey gt{
-                                exit
-                            }if
-                        }forall
-                    }ifelse
-                    out flushfile
-                }
-
-                (Q) {
-                    (Quitting) Debug
-                    closeFilesAndQuit
-                } 
+                (D) kvDeleteAll
+                (Q) kvQuit
             >>
             {
                 (Unknown command: [) cmd concatstrings (]) concatstrings Error
@@ -470,6 +268,254 @@
     end
 }def
 
+/stack2{
+    (Begin stack--) =
+    stack
+    (End stack --) =
+}bind def
+
+/kvPut{
+{ % put key value
+                    % d key
+                    % value
+                    % -Returns: nothing
+
+                    % Validate line
+                    line commandKeyValidate
+                    
+                    /key line 2 line length -2 add getinterval def
+
+                    /value valueSize string def
+
+                    /bytes bytes key length add value length add store
+                    
+                    /lineCount lineCount 1 add store
+                    f value readline
+                    /ok exch def
+                    ok not{
+                        exit
+                    }if
+                    /value exch store
+                    (Key: ) key concatstrings Debug        
+                    (Value: ) value concatstrings Debug        
+                    kvstore key value put
+                    (Put successful) Debug
+                }
+}def
+
+/kvDeleteAll{
+    { % Delete all items from dictionary
+                    % D
+                    % -Returns nothing
+
+                    kvstore{
+                        pop
+                        /key exch def
+                        kvstore key undef
+                        (Deleting: ) key keySize string cvs concatstrings Debug
+                    }forall
+                    (Dict Count=) kvstore length 16 string cvs concatstrings Debug
+
+                    /bytes 0 store
+                }
+}def
+
+/kvGet{
+    { % get value with key
+                    % g key
+                    % -Returns
+                    % -If not found:
+                    % f
+                    % -If found:
+                    % t
+                    % value
+
+                    % Validate line
+                    line commandKeyValidate
+                    
+                    /key line 2 line length -2 add getinterval def
+
+                    ( Key: [) key concatstrings (]) concatstrings Debug
+                    
+                    kvstore key known not{
+                        out (f\n) writestring
+                        ( not found ) Debug        
+                    }{
+                        out (t\n) writestring
+                        out kvstore key get writestring
+                        out (\n) writestring
+                        ( Value: ) kvstore key get concatstrings Debug
+                    }ifelse
+                    out flushfile
+    }
+}def
+
+/kvCount{
+    { % Num items stored
+                    % c
+                    % Returns num found:
+                    % n
+                    ( Dict #items: )  kvstore length 16 string cvs concatstrings Debug
+
+                    out kvstore length 16 string cvs writestring
+                    out (\n) writestring
+
+                    out flushfile
+    }
+}def
+
+/kvCountBytes{
+    { % Num bytes stored: key + value
+                    % b
+                    % Returns num found:
+                    % n
+                    ( Bytes: )  bytes 16 string cvs concatstrings Debug
+                    out bytes 16 string cvs writestring
+                    out (\n) writestring
+
+                    out flushfile
+    }
+}def
+
+/kvDeleteKey{
+    {
+                    % Validate line
+                    line commandKeyValidate
+
+                    /key line 2 line length -2 add getinterval def
+
+                    kvstore key known{
+                        /bytes bytes kvstore key get length sub key length sub store
+                    }if
+                    
+                    kvstore key undef
+                    ( Deleted key: )  key bracket concatstrings Debug
+                    
+                }
+}def
+
+/kvListKeysInRange{
+    { % List keys:
+                    % signature
+                    % k startN endN
+                    % returns:
+                    % n - number of keys; if n > 0:
+                    % keyStartN
+                    % ...
+                    % keyEndN
+                    
+                    ( List keys) Debug
+                    /range 32 string def
+                   
+                    /range line 2 line length -2 add getinterval store
+
+
+                    count =
+                    stack2
+                    % Extract start and end range
+                    range token{
+                        /startKey exch def
+                        token{
+                            /endKey exch def
+                        }{
+                            (/kv: Fail reading k endKey) Error
+                            exit
+                        }ifelse
+                    }{
+                        (/kv: Fail reading k startKey) =
+                        exit
+
+                    }ifelse
+                    count =
+                    stack
+                    (+++++) =
+                    stack
+                    (+++++) =
+                    count =
+                    (----+++++) =
+                    type =
+                    (ZZZZZZZZZZ) =
+                    %pop % not sure what we are popping here but there is a space on the stack...?
+
+                    ( Start: ) startKey 16 string cvs concatstrings (  End: ) concatstrings endKey 16 string cvs concatstrings Debug
+
+                    
+                    %Validate args
+                    % integers
+                    startKey type /integertype ne   endKey type /integertype ne  or{
+                        (/kv: start and end must be integers) Error
+                        exit
+                    }if
+
+                    % >= 0
+                    startKey 0 lt  endKey 0 lt or{
+                        (/kv: Start and end must be >= 0) Error
+                        exit
+                    }if
+
+                    % startKey < endKey
+                    startKey endKey lt not{
+                        (Start must be less than end) Error
+                        exit
+                    }if
+
+                    % body
+                    /dictLength kvstore length def
+
+
+                    % startKey greated than # items in dict
+                    startKey dictLength gt{
+                        ( #Items: ) Debug
+                        out (0\n) writestring
+                    }{
+                        % How many returned
+                        % Range entirely inside dictKey length
+                        endKey dictLength lt{
+                            ( #Items: ) endKey startKey sub 1 add 16 string cvs concatstrings Debug
+                            out endKey startKey sub 1 add 16 string cvs writestring
+                            out (\n) writestring
+                        }{
+                            % Top Range larger than dictKey length (partial return)
+                            ( #Items: ) dictLength startKey sub  16 string cvs concatstrings Debug
+
+                            out dictLength startKey sub  16 string cvs writestring
+
+                            out (\n) writestring
+
+                        }ifelse
+                        
+                        /keyCounter 0 def
+                        kvstore{
+                            keyCounter startKey ge   keyCounter endKey le and{
+                                (  ) keyCounter 16 string cvs concatstrings Debug
+                                pop % value                                
+                                /k exch def
+
+                                out k keySize string cvs writestring
+                                out (\n) writestring
+                            }{
+                                pop
+                                pop
+                            }ifelse
+
+                            /keyCounter keyCounter 1 add store
+
+                            % Above range?
+                            keyCounter endKey gt{
+                                exit
+                            }if
+                        }forall
+                    }ifelse
+                    out flushfile
+                }
+}def
+
+/kvQuit{
+    {
+                    (Quitting) Debug
+                    closeFilesAndQuit
+    }
+}def
 
 kv
 

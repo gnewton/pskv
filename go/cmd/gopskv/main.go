@@ -4,15 +4,30 @@ import (
 	"bufio"
 	"fmt"
 	//"io"
-	"strconv"
-	//"os"
 	"log"
+	"os"
 	"os/exec"
+	"strconv"
 )
+
+const GS_BIN = "GS_BIN_LOCATION"
+const KV = "KV.PS_LOCATION"
 
 func main() {
 
-	cmd := exec.Command("/home/gnewton/local/bin/gs", "-sDEVICE=nullpage", "-q", "-dNOPAUSE", "-dBATCH", "../../../kv.ps")
+	gsBin := os.Getenv(GS_BIN)
+
+	if gsBin == "" {
+		log.Fatal("Ghostscript binary location env variable " + GS_BIN + " not set.")
+	}
+
+	kvps := os.Getenv(KV)
+	if kvps == "" {
+		log.Fatal("kv.ps location env variable " + KV + " not set.")
+	}
+
+	//cmd := exec.Command("/home/gnewton/local/bin/gs", "-sDEVICE=nullpage", "-q", "-dNOPAUSE", "-dBATCH", "../../../kv.ps")
+	cmd := exec.Command(gsBin, "-sDEVICE=nullpage", "-q", "-dNOPAUSE", "-dBATCH", kvps)
 
 	in, err := cmd.StdinPipe()
 	if err != nil {
