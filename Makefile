@@ -3,5 +3,6 @@ limits2: limits2.ps
 
 kv: kv.ps
 	gs -dNOPAUSE -dBATCH -q -sDEVICE=nullpage -dNOSAFER  kv.ps
-	#gs -dNOPAUSE -dBATCH -q -sDEVICE=nullpage -dNOSAFER -dkv_debug=true kv.ps	
 
+debug: kv.ps
+	gs -dNOPAUSE -dBATCH -q -sDEVICE=nullpage -dNOSAFER -dkv_debug=true kv.ps
