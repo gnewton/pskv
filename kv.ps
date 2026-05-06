@@ -171,6 +171,8 @@
 	(switch: Running default) Debug
         default 
     }ifelse
+
+    (END) =
 	% stopped{
 	%     (error) =
 	% }{
@@ -237,13 +239,15 @@
                 (b) kvCountBytes % no args; returns: int
                 (c) kvCount      % no args; returns: int
                 (d) kvDeleteKey  % no args; returns nothing
-                (g) kvGet        % Single arg (key); Returns: if found: t, value; if not found: f
-                (k) kvListKeysInRange % intStart, intEnd; Returns: int; if int > 0: list of keys
-                (p) kvPut    % Multiline:
-                % line 0: arg: key; returns t or e if error (missing arg)
-                % line 1: arg: value; returns t or e if error
-                (D) kvDeleteAll
-                (Q) kvQuit
+                (g) kvGet        % Single arg (key); Returns: if found: t, value; if not found: f; if no arg, e
+                (k) kvListKeysInRange % intStart, intEnd; Returns: int; if int > 0: list of keys; if args missing or wrong (not int): e
+                (p) kvPut        % Multiline:
+                % line 0: arg: key; returns t or e if error (missing key arg)
+                % line 1: arg: value; returns t
+                (D) kvDeleteAll  % no args; returns nothing
+                (S) kvSave  % takes string arg (filename); returns t or e
+                (L) kvLoad
+                (Q) kvQuit       % no args; ends session
             >>
             {
 		(e) =
@@ -260,6 +264,7 @@
         closeFilesAndQuit
     }if
 }bind def
+
 
 /commandKeyValidate{ % expects k value
     1 dict begin
@@ -284,11 +289,13 @@
     end
 }def
 
+
 /stack2{
     (Begin stack--) =
     stack
     (End stack --) =
 }bind def
+
 
 /kvPut{
     {
@@ -327,8 +334,8 @@
     }
 }def
 
-/kvDeleteAll{
-    % Delete all items from dictionary
+
+/kvDeleteAll{ % Delete all items from dictionary
     { 
         % D
         % -Returns nothing
@@ -347,57 +354,57 @@
     }
 }def
 
-/kvGet{
-    { % get value with key
-                    % g key
-                    % -Returns
-                    % -If not found:
-                    % f
-                    % -If found:
-                    % t
-                    % value
+/kvGet{ % get value with key
+    { 
+        % g key
+        % -Returns
+        % -If not found:
+        % f
+        % -If found:
+        % t
+        % value
 
-                    % Validate line
-                    line commandKeyValidate
-                    {
-                        /key line 2 line length -2 add getinterval def
-                    }stopped{
-                        fail
-                    }{
+        % Validate line
+        line commandKeyValidate
+        {
+            /key line 2 line length -2 add getinterval def
+        }stopped{
+            fail
+        }{
 
-                    ( Key: [) key concatstrings (]) concatstrings Debug
+            ( Key: [) key concatstrings (]) concatstrings Debug
 
-                    kvstore key known not{
-                        out (f\n) writestring
-                        ( not found ) Debug        
-                    }{
-                        out (t\n) writestring
-                        out kvstore key get writestring
-                        out (\n) writestring
-                        ( Value: ) kvstore key get concatstrings Debug
-                    }ifelse
-                    out flushfile
-                    }ifelse
+            kvstore key known not{
+                out (f\n) writestring
+                ( not found ) Debug        
+            }{
+                out (t\n) writestring
+                out kvstore key get writestring
+                out (\n) writestring
+                ( Value: ) kvstore key get concatstrings Debug
+            }ifelse
+            out flushfile
+        }ifelse
     }
 }def
 
 /kvCount{
     { % Num items stored
-                    % c
-                    % Returns num found:
-                    % n
-                    ( Dict #items: )  kvstore length 16 string cvs concatstrings Debug
-                    out kvstore length 16 string cvs writestring
-                    out (\n) writestring
-                    out flushfile
+        % c
+        % Returns num found:
+        % n
+        ( Dict #items: )  kvstore length 16 string cvs concatstrings Debug
+        out kvstore length 16 string cvs writestring
+        out (\n) writestring
+        out flushfile
     }
 }def
 
 /kvCountBytes{
     { % Num bytes stored: key + value
-                    % b
-                    % Returns num found:
-                    % n
+        % b
+        % Returns num found:
+        % n
         ( Bytes: )  bytes 16 string cvs concatstrings Debug
         out bytes 16 string cvs writestring
         out (\n) writestring
@@ -408,16 +415,16 @@
 /kvDeleteKey{
     {
 	{
-                    % Validate line
-                    line commandKeyValidate
-
-                    /key line 2 line length -2 add getinterval def
-
-                    kvstore key known{
-                        /bytes bytes kvstore key get length sub key length sub store
-			kvstore key undef
-			( Deleted key: )  key bracket concatstrings Debug
-                    }if
+            % Validate line
+            line commandKeyValidate
+            
+            /key line 2 line length -2 add getinterval def
+            
+            kvstore key known{
+                /bytes bytes kvstore key get length sub key length sub store
+		kvstore key undef
+		( Deleted key: )  key bracket concatstrings Debug
+            }if
         }stopped{
 	    fail
 	}{
@@ -435,7 +442,6 @@
         % keyStartN
         % ...
         % keyEndN
-
 
         ( List keys) Debug
         /range 32 string def
@@ -541,10 +547,63 @@
     }
 }def
 
+/kvLoad{
+    {
+        
+        /filename line 2 line length -2 add getinterval def
+        /loadFile filename (r) file def
+        /k 1024 string def
+        /v 1024 string def
+        {
+            out flushfile
+            loadFile k readline{
+                /k exch def
+                loadFile v readline
+                pop
+                /v exch def
+                (*****) =
+                k =
+                v =
+                out flushfile
+                kvstore k v put
+            }{
+                (E) =
+                out flushfile
+                exit
+            }ifelse
+            (F) =
+            out flushfile
+        }loop
+        (GGGG) =
+        out flushfile
+    }
+}def
+
+/kvSave{
+    {
+        /filename line 2 line length -2 add getinterval def
+
+        /saveFile filename (w) file def
+
+         kvstore{
+             /value exch def
+             /key exch def
+
+             /key key key length string cvs def
+             saveFile key concatstrings (\n) concatstrings writestring
+             saveFile value (\n) concatstrings writestring
+             
+        
+         }forall
+         saveFile flushfile
+    }
+}def
+
+
 /kvQuit{
     {
-                    (Quitting) Debug
-                    closeFilesAndQuit
+        (Quitting) Debug
+        closeFilesAndQuit
     }
 }def
 
@@ -562,33 +621,3 @@
 
 out flushfile
 kv
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
